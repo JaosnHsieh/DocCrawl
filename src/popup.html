@@ -9,10 +9,14 @@
   </head>
   <body>
     <h3>Start Documentation Crawl</h3>
-    <input type="text" id="startUrl" placeholder="Enter starting URL" style="width: 100%; margin-bottom: 10px;">
-    <input type="number" id="depth" placeholder="Depth (default: 3)" min="1" style="width: 100%; margin-bottom: 10px;">
-    <input type="number" id="maxPages" placeholder="Max Pages (default: 200)" min="1" style="width: 100%; margin-bottom: 10px;">
-    <input type="number" id="ajaxDelay" placeholder="AJAX Delay (ms) (default: 200)" min="0" style="width: 100%; margin-bottom: 10px;">
+    <label for="startUrl">Starting URL:</label>
+    <input type="text" id="startUrl" placeholder="Enter starting URL" style="width: 100%; height: 2em; margin-bottom: 10px;">
+    <label for="depth">Depth (default: 3):</label>
+    <input type="number" id="depth" min="1" style="width: 100%; height: 2em; margin-bottom: 10px;">
+    <label for="maxPages">Max Pages (default: 200):</label>
+    <input type="number" id="maxPages" min="1" style="width: 100%; height: 2em; margin-bottom: 10px;">
+    <label for="ajaxDelay">AJAX Delay (ms) (default: 200):</label>
+    <input type="number" id="ajaxDelay" min="0" style="width: 100%; height: 2em; margin-bottom: 10px;">
     <button id="start">Start Crawl</button>
     <button id="clearHistory" style="margin-top: 10px;">Clear Crawl History</button>
     <script src="popup.js"></script>
