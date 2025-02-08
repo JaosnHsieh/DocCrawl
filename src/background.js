@@ -1,3 +1,5 @@
+// src/background.js
+
 var visited = new Set();
 // The queue now holds objects: { url, depth }
 var queue = [];
@@ -16,6 +18,53 @@ function normalizeUrl(url) {
     console.error("Failed to normalize URL:", url, e);
     return null;
   }
+}
+
+/**
+ * Prints the page in the given tab to PDF using Chrome's debugger API
+ * and downloads the PDF.
+ *
+ * @param {number} tabId - The ID of the tab to print.
+ * @param {string} filename - The filename for the downloaded PDF.
+ * @param {function} callback - Called after PDF generation and download starts.
+ */
+function printPageToPDF(tabId, filename, callback) {
+  // Attach the debugger to the tab.
+  chrome.debugger.attach({ tabId: tabId }, "1.3", () => {
+    // Default print options (modify as needed)
+    const options = {
+      printBackground: true,
+      landscape: false,
+      displayHeaderFooter: false,
+      paperWidth: 8.27,   // A4 width in inches
+      paperHeight: 11.69, // A4 height in inches
+    };
+
+    // Send the command to print to PDF.
+    chrome.debugger.sendCommand({ tabId: tabId }, "Page.printToPDF", options, (result) => {
+      if (chrome.runtime.lastError) {
+        console.error("Failed to print to PDF:", chrome.runtime.lastError.message);
+        chrome.debugger.detach({ tabId: tabId });
+        if (callback) callback();
+        return;
+      }
+      // The PDF data is returned as a base64‑encoded string.
+      const pdfData = result.data;
+      const pdfUrl = 'data:application/pdf;base64,' + pdfData;
+
+      // Initiate the download.
+      chrome.downloads.download({
+        url: pdfUrl,
+        filename: filename
+      }, (downloadId) => {
+        console.log("Download started with ID:", downloadId);
+        // Detach the debugger and invoke the callback.
+        chrome.debugger.detach({ tabId: tabId }, () => {
+          if (callback) callback();
+        });
+      });
+    });
+  });
 }
 
 function crawlNext() {
@@ -41,6 +90,7 @@ function crawlNext() {
   chrome.tabs.create({ url: normalizedUrl, active: false }, (tab) => {
     chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo) {
       if (tabId === tab.id && changeInfo.status === 'complete') {
+        // Ask the content script to process the page and collect links.
         chrome.tabs.sendMessage(tab.id, { action: 'processPage' }, (response) => {
           if (response && response.links) {
             // Only add new links if we have not reached the maximum depth
@@ -69,8 +119,18 @@ function crawlNext() {
             // Also add the current URL to the list
             allUrls.push(normalizedUrl);
           }
-          chrome.tabs.remove(tab.id);
-          crawlNext();
+          
+          // Create a safe filename for the PDF.
+          // (Here we replace non-alphanumeric characters with underscores and truncate if needed.)
+          let safeFilename = normalizedUrl.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+          let filename = safeFilename.substring(0, 50) + ".pdf";
+          
+          // Print the page to PDF and download it.
+          printPageToPDF(tab.id, filename, () => {
+            // Once PDF generation is done, close the tab and continue crawling.
+            chrome.tabs.remove(tab.id);
+            crawlNext();
+          });
         });
         chrome.tabs.onUpdated.removeListener(listener);
       }
@@ -80,8 +140,8 @@ function crawlNext() {
 
 function finishCrawl() {
   console.log("Crawling finished.");
-  // Open the generate page. It will connect to the background when loaded.
-  chrome.tabs.create({ url: chrome.runtime.getURL('src/generate.html'), active: false });
+  // You can add any finalization steps here.
+  // For example, you might open a summary page or notify the user.
 }
 
 // Listen for the start message from the popup.
@@ -108,16 +168,5 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     maxDepth = msg.depth || 3;
     allUrls = [];
     crawlNext();
-  }
-});
-
-// NEW: Listen for a connection from the generate page.
-chrome.runtime.onConnect.addListener(function(port) {
-  if (port.name === "generate") {
-    port.postMessage({
-      action: "generatePdf",
-      urls: allUrls
-    });
-    allUrls = []; // Reset after sending
   }
 });
