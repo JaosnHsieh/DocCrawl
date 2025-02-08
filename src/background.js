@@ -7,6 +7,7 @@ var maxDepth = 3;  // default depth limit is 3
 var allUrls = [];
 var aggregatedContent = "";
 var maxPages = 200; // default maximum pages to crawl
+var allowedHost = "";
 var ajaxDelay = 200; // default AJAX delay in ms
 
 function finishCrawl() {
@@ -52,9 +53,14 @@ function crawlNext() {
             if (response.articleHtml) {
               aggregatedContent += response.articleHtml + "<hr/>";
             }
-            // Process links for further crawling (if within depth and maxPages not exceeded).
+            // Process links for further crawling (if within depth and maxPages not exceeded) and restrict to the allowed domain.
             if (response.links && depth < maxDepth) {
               response.links.forEach(function(link) {
+                try {
+                  if (new URL(link).host !== allowedHost) return;
+                } catch(e) {
+                  return;
+                }
                 if (!visited.has(link) && visited.size < maxPages) {
                   queue.push({ url: link, depth: depth + 1 });
                   allUrls.push(link);
@@ -87,6 +93,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
     // Clear any previously persisted visited URLs from storage.
     chrome.storage.local.remove(['visitedUrls'], function() {
+      // Set allowedHost to the host of the starting URL.
+      allowedHost = new URL(msg.startUrl).host;
       // Start crawling with the provided starting URL.
       let startUrl = msg.startUrl;
       queue.push({ url: startUrl, depth: 0 });
