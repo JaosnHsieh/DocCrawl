@@ -23,13 +23,18 @@
         "<all_urls>"
       ],
       "js": [
-        "3rd/html2pdf.bundle.min.js",
         "src/content.js"
       ],
       "run_at": "document_end"
     }
   ],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
-  }
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["node_modules/jspdf.umd.min.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }
