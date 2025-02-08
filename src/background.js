@@ -54,38 +54,45 @@ function crawlNext() {
   visited.add(url);
   chrome.storage.local.set({ visitedUrls: Array.from(visited) });
   
-  // Open the URL in a new, non‑active tab.
+  // Open the URL in a new, non‐active tab.
   chrome.tabs.create({ url: url, active: false }, function(tab) {
+    if (!tab || !tab.id) {
+      crawlNext();
+      return;
+    }
+    let createdTabId = tab.id;
     chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo) {
-      if (tabId === tab.id && changeInfo.status === 'complete') {
-        // Ask the content script to process the page (extract article and links),
-        // and pass the ajaxDelay value along.
-        chrome.tabs.sendMessage(tab.id, { action: 'processPage', ajaxDelay: ajaxDelay }, function(response) {
-          if (response) {
-            // Append this page’s article HTML (with its URL header) to the accumulator.
-            if (response.articleHtml) {
-              aggregatedContent += response.articleHtml + "<hr/>";
+      if (tabId === createdTabId && changeInfo.status === 'complete') {
+        // Wait briefly to let the tab settle (avoids "Tabs cannot be edited" errors)
+        setTimeout(function() {
+          chrome.tabs.sendMessage(createdTabId, { action: 'processPage', ajaxDelay: ajaxDelay }, function(response) {
+            if (chrome.runtime.lastError) {
+              console.error(chrome.runtime.lastError.message);
             }
-            // Process links for further crawling (if within depth and maxPages not exceeded) and restrict to the allowed domain.
-            if (response.links && depth < maxDepth) {
-              response.links.forEach(function(link) {
-                try {
-                  if (new URL(link).host !== allowedHost) return;
-                } catch(e) {
-                  return;
-                }
-                if (!visited.has(link) && visited.size < maxPages) {
-                  queue.push({ url: link, depth: depth + 1 });
-                  allUrls.push(link);
-                }
-              });
+            if (response) {
+              if (response.articleHtml) {
+                aggregatedContent += response.articleHtml + "<hr/>";
+              }
+              if (response.links && depth < maxDepth) {
+                response.links.forEach(function(link) {
+                  try {
+                    if (new URL(link).host !== allowedHost) return;
+                  } catch(e) {
+                    return;
+                  }
+                  if (!visited.has(link) && visited.size < maxPages) {
+                    queue.push({ url: link, depth: depth + 1 });
+                    allUrls.push(link);
+                  }
+                });
+              }
             }
-          }
-          // Close the tab and proceed.
-          chrome.tabs.remove(tab.id, function() {
-            crawlNext();
+            // Use the helper to retry removal if needed.
+            tryRemoveTab(createdTabId, function() {
+              crawlNext();
+            });
           });
-        });
+        }, 100);
         chrome.tabs.onUpdated.removeListener(listener);
       }
     });
