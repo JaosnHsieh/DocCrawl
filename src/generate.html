@@ -2,13 +2,16 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <title>Generate PDF</title>
-    <!-- Load the jsPDF library from the extension root's node_modules folder -->
-    <script src="../node_modules/jspdf.umd.min.js"></script>
-    <!-- Load generate.js from the same folder -->
-    <script src="generate.js"></script>
+    <title>Generate Aggregated PDF</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 20px; }
+      /* You can add custom styles to format the aggregated content */
+    </style>
   </head>
   <body>
-    <h1>Generating PDF...</h1>
+    <div id="content">
+      <p>Loading aggregated content...</p>
+    </div>
+    <script src="generate.js"></script>
   </body>
 </html>

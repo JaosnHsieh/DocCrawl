@@ -1,26 +1,36 @@
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.action === 'processPage') {
-    // Add a header with the current URL (for visual feedback, if desired)
-    const header = document.createElement('div');
-    header.textContent = window.location.href;
-    header.style.fontSize = '12px';
-    header.style.textAlign = 'center';
-    header.style.margin = '20px 0';
-    header.style.padding = '10px';
-    header.style.borderBottom = '1px solid #ccc';
-    document.body.insertBefore(header, document.body.firstChild);
-
-    // Gather all links on the page
+    // Create a header with the current page URL.
+    const headerHtml = `<h2 style="border-bottom: 1px solid #ccc; padding-bottom: 4px;">${window.location.href}</h2>`;
+    
+    // Use Readability to extract the article.
+    let article;
+    try {
+      article = new Readability(document).parse();
+    } catch (e) {
+      console.error("Readability failed on", window.location.href, e);
+    }
+    
+    // If Readability fails, fallback to using the body’s inner HTML.
+    const contentHtml = article && article.content ? article.content : document.body.innerHTML;
+    
+    // Optionally, still gather all links for crawling.
     const links = [];
     document.querySelectorAll('a').forEach(a => {
-      const href = a.href;
-      links.push(href);
+      if (a.href) {
+        links.push(a.href);
+      }
     });
-    sendResponse({ links: links });
+    
+    // Respond with both the links (for crawling) and the extracted article HTML.
+    sendResponse({ 
+      links: links, 
+      articleHtml: headerHtml + contentHtml 
+    });
     return true;
+    
   } else if (msg.action === 'generatePdf') {
-    // Generate a PDF of the crawled URLs.
-    // (Ensure that jsPDF is available on this page.)
+    // (Legacy branch if needed)
     const doc = new window.jsPDF();
     msg.urls.forEach((url, index) => {
       doc.text(url, 10, 10 + (index * 10));

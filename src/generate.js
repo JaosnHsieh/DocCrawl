@@ -1,28 +1,18 @@
-// Debug: log the jsPDF namespace to ensure it loaded
-console.log("generate.js loaded");
-console.log("window.jspdf:", window.jspdf);
+// src/generate.js
 
-if (!window.jspdf) {
-  console.error("jsPDF did not load. Please verify the script path in generate.html.");
-}
-
-const { jsPDF } = window.jspdf || { jsPDF: window.jsPDF };
-console.log("jsPDF constructor:", jsPDF);
-
-// Establish a long‑lived connection with the background.
-var port = chrome.runtime.connect({ name: "generate" });
-port.onMessage.addListener((msg) => {
-  if (msg.action === 'generatePdf') {
-    console.log("Received generatePdf message with urls:", msg.urls);
-    if (!jsPDF) {
-      console.error("jsPDF is not available!");
-      return;
-    }
-    const doc = new jsPDF();
-    msg.urls.forEach((url, index) => {
-      doc.text(url, 10, 10 + (index * 10));
+document.addEventListener('DOMContentLoaded', function() {
+    // Load the aggregated content from storage.
+    chrome.storage.local.get(['aggregatedContent'], function(result) {
+      var contentDiv = document.getElementById('content');
+      if (result.aggregatedContent) {
+        contentDiv.innerHTML = result.aggregatedContent;
+      } else {
+        contentDiv.innerHTML = "<p>No content found.</p>";
+      }
+      // After a short delay (to allow the content to render), tell the background to print the page.
+      setTimeout(function() {
+        chrome.runtime.sendMessage({ action: 'printAggregatedPdf' });
+      }, 1000); // Adjust the delay if needed.
     });
-    console.log("Saving PDF with", msg.urls.length, "urls");
-    doc.save('crawled-urls.pdf');
-  }
-});
+  });
+  
