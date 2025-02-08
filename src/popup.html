@@ -9,11 +9,8 @@
   </head>
   <body>
     <h3>Start Documentation Crawl</h3>
+    <input type="text" id="startUrl" placeholder="Enter starting URL" style="width: 100%; margin-bottom: 10px;">
     <button id="start">Start Crawl</button>
-    <script>
-      document.getElementById('start').addEventListener('click', () => {
-        chrome.runtime.sendMessage({ action: 'startCrawl' });
-      });
-    </script>
+    <script src="popup.js"></script>
   </body>
 </html>

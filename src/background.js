@@ -42,7 +42,7 @@ chrome.action.onClicked.addListener(() => {
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.action === 'startCrawl') {
     visited = new Set();
-    queue = [];
+    queue = [msg.startUrl];
     crawlNext();
   }
 });
