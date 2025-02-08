@@ -85,13 +85,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     maxPages = msg.maxPages || 200;
     ajaxDelay = msg.ajaxDelay !== undefined ? msg.ajaxDelay : 200;
 
-    // Load any previously persisted visited URLs from storage.
-    chrome.storage.local.get(['visitedUrls'], function(result) {
-      if (result.visitedUrls && Array.isArray(result.visitedUrls)) {
-        result.visitedUrls.forEach(function(url) {
-          visited.add(url);
-        });
-      }
+    // Clear any previously persisted visited URLs from storage.
+    chrome.storage.local.remove(['visitedUrls'], function() {
       // Start crawling with the provided starting URL.
       let startUrl = msg.startUrl;
       queue.push({ url: startUrl, depth: 0 });
