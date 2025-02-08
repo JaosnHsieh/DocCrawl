@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Documentation Crawler</title>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 10px; }
+      button { padding: 8px 16px; }
+    </style>
+  </head>
+  <body>
+    <h3>Start Documentation Crawl</h3>
+    <button id="start">Start Crawl</button>
+    <script>
+      document.getElementById('start').addEventListener('click', () => {
+        chrome.runtime.sendMessage({ action: 'startCrawl' });
+      });
+    </script>
+  </body>
+</html>
