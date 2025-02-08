@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // After a short delay (to allow the content to render), tell the background to print the page.
       setTimeout(function() {
         chrome.runtime.sendMessage({ action: 'printAggregatedPdf' });
-      }, 1000); // Adjust the delay if needed.
+      }, 3000); // Increased delay to ensure the tab is ready.
     });
   });
   

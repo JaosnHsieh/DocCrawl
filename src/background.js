@@ -14,7 +14,7 @@ function finishCrawl() {
   // Save the aggregated content into storage so that the generate page can load it.
   chrome.storage.local.set({ aggregatedContent: aggregatedContent }, function() {
     // Open the generate page (it will load the aggregated content and trigger PDF printing).
-    chrome.tabs.create({ url: chrome.runtime.getURL('src/generate.html'), active: false });
+    chrome.tabs.create({ url: chrome.runtime.getURL('src/generate.html'), active: true });
   });
 }
 
