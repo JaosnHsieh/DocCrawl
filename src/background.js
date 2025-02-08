@@ -1,9 +1,18 @@
 let visited = new Set();
 let queue = [];
 
+let allUrls = [];
+
 function crawlNext() {
   if (queue.length === 0) {
     console.log("Crawling finished.");
+    // Generate PDF after crawl completes
+    const doc = new jsPDF();
+    allUrls.forEach((url, index) => {
+      doc.text(url, 10, 10 + (index * 10));
+    });
+    doc.save('crawled-urls.pdf');
+    allUrls = []; // Reset for next crawl
     return;
   }
   const url = queue.shift();
@@ -21,8 +30,10 @@ function crawlNext() {
             response.links.forEach(link => {
               if (!visited.has(link)) {
                 queue.push(link);
+                allUrls.push(link);
               }
             });
+            allUrls.push(url); // Add current URL
           }
           chrome.tabs.remove(tab.id);
           crawlNext();

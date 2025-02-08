@@ -9,24 +9,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     header.style.borderBottom = '1px solid #ccc';
     document.body.insertBefore(header, document.body.firstChild);
 
-    setTimeout(() => {
-      const opt = {
-        margin:       0.5,
-        filename:     `${document.title || "document"}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-      };
-
-      html2pdf().set(opt).from(document.body).save().then(() => {
-        const links = [];
-        document.querySelectorAll('a').forEach(a => {
-          const href = a.href;
-          links.push(href);
-        });
-        sendResponse({ links: links });
-      });
-    }, 1000);
+    const links = [];
+    document.querySelectorAll('a').forEach(a => {
+      const href = a.href;
+      links.push(href);
+    });
+    sendResponse({ links: links });
 
     return true;
   }
