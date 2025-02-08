@@ -10,6 +10,19 @@ var maxPages = 200; // default maximum pages to crawl
 var allowedHost = "";
 var ajaxDelay = 200; // default AJAX delay in ms
 
+function tryRemoveTab(tabId, callback) {
+  chrome.tabs.remove(tabId, function() {
+    if (chrome.runtime.lastError) {
+      console.error("Error removing tab:", chrome.runtime.lastError.message);
+      setTimeout(function() {
+        tryRemoveTab(tabId, callback);
+      }, 200);
+    } else {
+      callback();
+    }
+  });
+}
+
 function finishCrawl() {
   console.log("Crawling finished. Total pages crawled:", visited.size);
   // Save the aggregated content into storage so that the generate page can load it.
