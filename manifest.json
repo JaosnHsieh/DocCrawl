@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Documentation PDF Crawler",
-  "version": "1.0",
+  "name": "DocCrawl",
+  "version": "0.01",
   "permissions": [
     "activeTab",
     "scripting",
