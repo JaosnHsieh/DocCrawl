@@ -9,6 +9,7 @@ var aggregatedContent = "";
 var maxPages = 200; // default maximum pages to crawl
 var allowedHost = "";
 var ajaxDelay = 200; // default AJAX delay in ms
+var visitedPages = [];
 
 function tryRemoveTab(tabId, callback) {
   chrome.tabs.remove(tabId, function() {
@@ -72,6 +73,8 @@ function crawlNext() {
             if (response) {
               if (response.articleHtml) {
                 aggregatedContent += response.articleHtml + "<hr/>";
+                visitedPages.push({ url: url, content: response.articleHtml });
+                chrome.storage.local.set({ visitedPages: visitedPages });
               }
               if (response.links && depth < maxDepth) {
                 response.links.forEach(function(link) {
@@ -110,9 +113,10 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     maxDepth = msg.depth || 3;
     maxPages = msg.maxPages || 200;
     ajaxDelay = msg.ajaxDelay !== undefined ? msg.ajaxDelay : 200;
+    visitedPages = [];
 
     // Clear any previously persisted visited URLs from storage.
-    chrome.storage.local.remove(['visitedUrls'], function() {
+    chrome.storage.local.remove(['visitedUrls', 'visitedPages'], function() {
       // Set allowedHost to the host of the starting URL.
       allowedHost = new URL(msg.startUrl).host;
       // Start crawling with the provided starting URL.
@@ -122,7 +126,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     });
   } else if (msg.action === 'clearHistory') {
     // Clear persistent storage for visited URLs.
-    chrome.storage.local.remove(['visitedUrls'], function() {
+    chrome.storage.local.remove(['visitedUrls', 'visitedPages'], function() {
       visited = new Set();
       console.log("Cleared persistent crawl history.");
       if (sendResponse) sendResponse({ status: "cleared" });
@@ -148,10 +152,13 @@ function printPageToPDF(tabId, filename, callback) {
       paperHeight: 11.69, // A4 height in inches
     };
     chrome.debugger.sendCommand({ tabId: tabId }, "Page.printToPDF", options, function(result) {
-      if (chrome.runtime.lastError) {
-        console.error("Failed to print to PDF:", chrome.runtime.lastError.message);
-        chrome.debugger.detach({ tabId: tabId });
-        if (callback) callback();
+      if (!result || !result.data) {
+        console.error("No PDF data returned, retrying...");
+        chrome.debugger.detach({ tabId: tabId }, function() {
+          setTimeout(function() {
+            printPageToPDF(tabId, filename, callback);
+          }, 500);
+        });
         return;
       }
       const pdfData = result.data;

@@ -33,4 +33,8 @@ document.addEventListener('DOMContentLoaded', function() {
       alert('Crawl history cleared.');
     });
   });
+
+  document.getElementById('openVisited').addEventListener('click', () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL('src/visited.html') });
+  });
 });
